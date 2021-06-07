@@ -38,6 +38,7 @@ def create_labels():
                         height = (y_max - y_min) / img_size
 
                         # box_norm = [int(x) / img_size for x in box_arr]
+                        domain = 0
                         record = (str(domain) + ' ' + str(x_center) + ' ' + str(y_center) + ' ' + str(
                             width) + ' ' + str(height) + '\n')
                         f.write(record)
@@ -65,7 +66,7 @@ def create_dataset():
                 shutil.copy(os.path.join(txt_path, txt), os.path.join(destinationpath, txt))
                 im = Image.open(Path(image_path).joinpath(img))
                 rgb_im = im.convert('RGB')
-                rgb_im.save(Path(destinationpath).joinpath(Path(image_path).joinpath(img).stem + '.jpg'))
+                rgb_im.save(Path(image_path).joinpath(img).stem + '.jpg')
 
                 # shutil.copy(os.path.join(image_path, img), os.path.join(destinationpath, img))
 
