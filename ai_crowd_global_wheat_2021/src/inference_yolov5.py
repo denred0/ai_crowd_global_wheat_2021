@@ -121,9 +121,5 @@ def create_csv():
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    # main()
-=======
     main()
->>>>>>> 5c1487b267876a6046a955c941c9d53034302e07
     create_csv()

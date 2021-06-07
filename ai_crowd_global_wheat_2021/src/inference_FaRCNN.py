@@ -111,15 +111,12 @@ def main():
     # replace the pre-trained head with a new one
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
     model.load_state_dict(
-        torch.load('data/FaRCNN/fasterrcnn_resnet50_fpn_65_11800.pth', map_location=torch.device('cpu')))
+        # torch.load('data/FaRCNN/fasterrcnn_resnet50_fpn_65_11800.pth', map_location=torch.device('cuda')))
+        torch.load('data/FaRCNN/fasterrcnn_resnet50_fpn_41_7600.pth'))
     model.eval()
-    model.conf = 0.2
+    model.conf = 0.5
     IMAGE_SIZE = 1024
-    # cpu_device = torch.device("cpu")
-
-    # model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolo5/best.pt', force_reload=True)
-    # model.conf = 0.25  # confidence threshold (0-1)
-    # model.iou = 0.45  # NMS IoU threshold (0-1)
+    model.to(torch.device('cuda:0'))
 
     test_folder = Path('data/test')
     types = ('*.png')
@@ -132,7 +129,7 @@ def main():
 
     submission = []
     for i, file in tqdm(enumerate(test_files)):
-        # if file.stem == '00727db2685f6f7f49f5589e602b1e29d3cbd0642df86e86d9a5a968570d0bf0':
+        # if file.stem == '0e782082dd7e10e7a804b97a4efdcea10ee3cf7630956ea064303d78d1052a9f':
         image = cv2.imread(str(file), cv2.IMREAD_COLOR)
         image_pred = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
         image_pred /= 255.0
@@ -144,11 +141,11 @@ def main():
 
         image_pred = image_pred['image'].unsqueeze(0)
         with torch.no_grad():
-            results = model(image_pred)
+            results = model(image_pred.cuda())
 
-        scores = results[0]['scores'].detach().numpy().tolist()
-        labels = results[0]['labels'].detach().numpy().tolist()
-        boxes = results[0]['boxes'].detach().numpy().astype('int').tolist()
+        scores = results[0]['scores'].detach().cpu().numpy().tolist()
+        labels = results[0]['labels'].detach().cpu().numpy().tolist()
+        boxes = results[0]['boxes'].detach().cpu().numpy().astype('int').tolist()
 
         # boxes_new = []
         #
@@ -173,6 +170,7 @@ def main():
         #     boxes_new.append(box_row)
 
         boxes_new_nms = []
+
         for box in boxes:
             # x1 = int((box[2] - box[0]) / 2 + box[0])
             # y1 = int((box[3] - box[1]) / 2 + box[1])
@@ -197,22 +195,24 @@ def main():
 
         # boxes_wbf, scores, labels = weighted_boxes_fusion([boxes_new], [scores], [labels], weights=None,
         #                                                   iou_thr=0.5, skip_box_thr=0.2)
-        idxs = cv2.dnn.NMSBoxes(boxes_new_nms, scores, score_threshold=0.6, nms_threshold=0.5)
+        idxs = cv2.dnn.NMSBoxes(boxes_new_nms, scores, score_threshold=0.7, nms_threshold=0.7)
+
+        addition_px = 0
+        box_string = 'no_box'
 
         if len(idxs) > 0:
             box_string = ''
             # loop over the indexes we are keeping
             for i in idxs.flatten():
                 # extract the bounding box coordinates
-                (x, y) = (boxes_new_nms[i][0], boxes_new_nms[i][1])
-                (w, h) = (boxes_new_nms[i][2], boxes_new_nms[i][3])
+                (x, y) = (boxes_new_nms[i][0] + addition_px, boxes_new_nms[i][1] + addition_px)
+                (w, h) = (boxes_new_nms[i][2] - addition_px, boxes_new_nms[i][3] - addition_px)
 
                 # color = [int(c) for c in COLORS[classIDs[i]]]
                 cv2.rectangle(image, (x, y), (x + w, y + h), COLOR, 2)
 
                 box_string += str(x) + ' ' + str(y) + ' ' + str(x + w) + ' ' + str(y + h) + ';'
 
-        # box_string = 'no_box'
         # # ensure at least one detection exists
         # if len(boxes_wbf) > 0:
         #     box_string = ''
@@ -238,8 +238,8 @@ def main():
 
     with open('data/submission.csv', 'w') as f:
         f.write('image_name,PredString,domain\n')
-    for item in submission:
-        f.write("%s\n" % item)
+        for item in submission:
+            f.write("%s\n" % item)
 
 
 def create_csv():
@@ -276,7 +276,7 @@ def create_csv():
     for temp in template:
         for res in results:
             # res[0] =
-            if temp[0] == res[0][1:]:
+            if temp[0] == res[0]:
                 str_total = str(temp[0]) + ',' + str(temp[1]) + ',' + str(res[1])
                 total.append(str_total)
 
@@ -288,5 +288,5 @@ def create_csv():
 
 
 if __name__ == '__main__':
-    # main()
+    main()
     create_csv()
