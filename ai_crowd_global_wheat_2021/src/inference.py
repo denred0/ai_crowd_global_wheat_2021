@@ -7,7 +7,7 @@ import csv
 from pathlib import Path
 import glob
 from tqdm import tqdm
-from ensemble_boxes import *
+# from ensemble_boxes import *
 
 
 def get_all_files_in_folder(folder, types):
@@ -31,7 +31,7 @@ def main():
     #         (key, val) = line.split()
     #         classes_dict[int(key)] = val
 
-    CONFIDENCE_THRESHOLD = 0.20
+    CONFIDENCE_THRESHOLD = 0.22
 
     LABELS = open(LABELS_FILE).read().strip().split("\n")
 
@@ -60,7 +60,7 @@ def main():
             ln = net.getLayerNames()
             ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
-            blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (1024, 1024),
+            blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (704, 704),
                                          swapRB=True, crop=False)
             net.setInput(blob)
 
@@ -129,7 +129,8 @@ def main():
 
             submission.append(string_result)
 
-            cv2.imwrite('data/inference_result/' + str(file.stem) + '.png', image)
+            if i < 100:
+                cv2.imwrite('data/inference_yolov4/' + str(file.stem) + '.png', image)
 
     with open('data/submission.csv', 'w') as f:
         f.write('image_name,PredString,domain\n')
@@ -183,4 +184,4 @@ def create_csv():
 
 if __name__ == '__main__':
     main()
-    # create_csv()
+    create_csv()

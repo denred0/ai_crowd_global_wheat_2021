@@ -8,7 +8,9 @@ import torch
 from pathlib import Path
 import glob
 from tqdm import tqdm
-from ensemble_boxes import *
+
+
+# from ensemble_boxes import *
 
 
 def get_all_files_in_folder(folder, types):
@@ -33,13 +35,15 @@ def main():
     submission = []
     for i, file in tqdm(enumerate(test_files)):
         if i > 0:
-            # if file.stem == '1aeba2df1a75fc2c195295d0868eb8c2bf2a3495c0061e18d7fdfe82f734de82':
+        # if file.stem == '00f05dbe4fce3713d1574746de07914dd0f81dea612412ffa09ad73598f85a5c':
             image = cv2.imread(str(file), cv2.IMREAD_COLOR)
             # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-            results = model(image)
+            results = model(image, size=640)
 
             results_list = results.pandas().xyxy[0].values.tolist()
+
+            # print('\nresult count:', len(results_list))
 
             box_string = 'no_box'
             # ensure at least one detection exists
@@ -63,7 +67,8 @@ def main():
 
             submission.append(string_result)
 
-            cv2.imwrite('data/inference_yolov5/' + str(file.stem) + '.png', image)
+            if i < 100:
+                cv2.imwrite('data/inference_yolov5/' + str(file.stem) + '.png', image)
 
     with open('data/submission.csv', 'w') as f:
         f.write('image_name,PredString,domain\n')
@@ -116,5 +121,9 @@ def create_csv():
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     # main()
+=======
+    main()
+>>>>>>> 5c1487b267876a6046a955c941c9d53034302e07
     create_csv()
