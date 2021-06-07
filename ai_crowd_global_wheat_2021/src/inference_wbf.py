@@ -122,7 +122,7 @@ def main():
                 if x2 < 0: x2 = 0
                 if y2 < 0: y2 = 0
 
-                if x1 > 1: x1 = 0
+                if x1 > 1: x1 = 1
                 if y1 > 1: y1 = 1
                 if x2 > 1: x2 = 1
                 if y2 > 1: y2 = 1

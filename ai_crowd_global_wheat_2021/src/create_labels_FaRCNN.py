@@ -13,17 +13,13 @@ def create_labels_from_csv():
     img_size = 1024
 
     labels = []
-    labels.append('image_id,width,height,bbox,source')
     with open('data/train.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         next(csv_reader, None)  # skip the headers
         for i, row in tqdm(enumerate(csv_reader)):
-            filename = 'data/txts/' + row[0] + '.txt'
             boxes = row[1].split(";")
-            domain = row[2]
 
             if boxes[0] != 'no_box':
-                # with open(filename, "w") as f:
 
                 for box in boxes:
                     box_arr = box.split(" ")
@@ -39,41 +35,17 @@ def create_labels_from_csv():
                     width = (x_max - x_min)
                     height = (y_max - y_min)
 
-                    # box_norm = [int(x) / img_size for x in box_arr]
-                    domain = 0
                     record = row[0] + ',' + str(img_size) + ',' + str(img_size) + ',' + '\"[' + str(
                         x_min) + ', ' + str(
                         y_min) + ', ' + str(width) + ', ' + str(
-                        height) + ']\",usask_1' + '\n'
+                        height) + ']\",usask_1'
                     labels.append(record)
-                        # f.write(record)
-                    # else:
-                    #     record = (str(domain) + '\n')
-                    #     f.write(record)
 
-    labels.append(domain)
-    labels = list(set(labels))
-    print('Labels: {}'.format(labels))
-    print('Labels count: {}'.format(len(labels)))
+    with open('data/FaRCNN/train.csv', 'w') as f:
+        f.write('image_id,width,height,bbox,source\n')
+        for item in labels:
+            f.write("%s\n" % item)
 
-
-def create_dataset():
-    image_path = 'data/imgs'
-    txt_path = 'data/txts'
-    _, _, images_list = next(walk(image_path))
-    _, _, txt_list = next(walk(txt_path))
-
-    destinationpath = 'data/dataset'
-
-    for txt in tqdm(txt_list):
-        for img in images_list:
-            if Path(image_path).joinpath(img).stem == Path(txt_path).joinpath(txt).stem:
-                shutil.copy(os.path.join(txt_path, txt), os.path.join(destinationpath, txt))
-                im = Image.open(Path(image_path).joinpath(img))
-                rgb_im = im.convert('RGB')
-                rgb_im.save(Path(image_path).joinpath(img).stem + '.jpg')
-
-                # shutil.copy(os.path.join(image_path, img), os.path.join(destinationpath, img))
 
 
 if __name__ == '__main__':
