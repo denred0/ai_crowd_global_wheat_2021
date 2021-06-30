@@ -4,6 +4,7 @@ import cv2
 import sys
 import csv
 import torch
+import shutil
 
 from pathlib import Path
 import glob
@@ -22,10 +23,15 @@ def get_all_files_in_folder(folder, types):
 
 
 def main():
+    dirpath = Path('data/inference_yolov4')
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
+    Path(dirpath).mkdir(parents=True, exist_ok=True)
+
     # yolo4-tiny
-    LABELS_FILE = 'yolo4/obj.names'
-    CONFIG_FILE = 'yolo4/yolov4-obj-mycustom.cfg'
-    WEIGHTS_FILE = 'yolo4/yolov4-obj-mycustom_best.weights'
+    LABELS_FILE = 'yolo4/exp_6/obj.names'
+    CONFIG_FILE = 'yolo4/exp_6/yolov4-obj-mycustom.cfg'
+    WEIGHTS_FILE = 'yolo4/exp_6/yolov4-obj-mycustom_best.weights'
 
     # # classes labels for png classes representation
     # classes_dict = {}
@@ -34,9 +40,9 @@ def main():
     #         (key, val) = line.split()
     #         classes_dict[int(key)] = val
 
-    CONFIDENCE_THRESHOLD = 0.25
-    inference_image_size = 736
-    NMS_THR = 0.5
+    CONFIDENCE_THRESHOLD = 0.26  # 0.26
+    inference_image_size = 736  # 736
+    NMS_THR = 0.4  # 0.4
 
     # LABELS = open(LABELS_FILE).read().strip().split("\n")
 
@@ -56,6 +62,7 @@ def main():
     test_files = get_all_files_in_folder(test_folder, types)
 
     submission = []
+    boxes_conf = []
     for ind, file in tqdm(enumerate(test_files), total=len(test_files)):
         if True:  # file.stem == '0b4d11b3c59fd74a095090da71abf87808c58d57a84639b99e8b2eafdd29cd7f':
             image = cv2.imread(str(file), cv2.IMREAD_COLOR)
@@ -75,6 +82,8 @@ def main():
             boxes = []
             confidences = []
             classIDs = []
+
+            str_boxes = ''
 
             # loop over each of the layer outputs
             for output in layerOutputs:
@@ -109,6 +118,17 @@ def main():
 
             # apply non-maxima suppression to suppress weak, overlapping bounding
             # boxes
+            box_str = ''
+            for box in boxes:
+                box_str += str(box[0]) + ' ' + str(box[1]) + ' ' + str(box[2]) + ' ' + str(box[3]) + ';'
+
+            score_str = ''
+            for sc in confidences:
+                score_str += str(sc) + ';'
+
+            str_boxes = str(file.stem) + ',' + box_str[:-1] + ',' + score_str[:-1]
+            boxes_conf.append(str_boxes)
+
             idxs = cv2.dnn.NMSBoxes(boxes, confidences, score_threshold=CONFIDENCE_THRESHOLD,
                                     nms_threshold=NMS_THR)
 
@@ -140,6 +160,10 @@ def main():
     with open('data/submission.csv', 'w') as f:
         f.write('image_name,PredString,domain\n')
         for item in submission:
+            f.write("%s\n" % item)
+
+    with open('data/boxes_conf.csv', 'w') as f:
+        for item in boxes_conf:
             f.write("%s\n" % item)
 
 
